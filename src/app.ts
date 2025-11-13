@@ -18,7 +18,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://roxiler-rate-my-store-project-full-nine.vercel.app/",
     credentials: true
 }))
 
