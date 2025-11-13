@@ -20,6 +20,6 @@ const verifyAccessToken = (token) => {
 };
 exports.verifyAccessToken = verifyAccessToken;
 const verifyRefreshToken = (token) => {
-    return jsonwebtoken_1.default.sign(token, REFRESH_TOKEN_SECRET);
+    return jsonwebtoken_1.default.verify(token, REFRESH_TOKEN_SECRET);
 };
 exports.verifyRefreshToken = verifyRefreshToken;

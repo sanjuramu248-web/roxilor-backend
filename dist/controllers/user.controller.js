@@ -3,27 +3,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.registerUser = void 0;
+exports.updateUserProfile = exports.getUserProfile = exports.loginUser = exports.registerUser = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
-const models_1 = require("../models");
+const user_model_1 = require("../models/user.model");
 const apiError_1 = require("../utils/apiError");
+const apiResponse_1 = require("../utils/apiResponse");
 const asyncHandler_1 = require("../utils/asyncHandler");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jwt_1 = require("../utils/jwt");
 exports.registerUser = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-    const result = models_1.userSignupSchema.safeParse(req.body);
+    const result = user_model_1.userSignupSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ errors: result.error.issues });
+        return res.status(200).json({
+            error: result.error.format()
+        });
     }
     const { name, email, password, address } = result.data;
-    if (!name || !email || !password || !address) {
-        return res.status(400).json({ message: "All fields are required" });
-    }
     const existingUser = await prisma_1.default.user.findUnique({
         where: { email }
     });
     if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+        throw new apiError_1.ApiError(409, "User with this email already exists");
     }
     const hashedPassword = await bcrypt_1.default.hash(password, 10);
     const user = await prisma_1.default.user.create({
@@ -33,63 +33,91 @@ exports.registerUser = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
             password: hashedPassword,
             address,
             role: "NORMAL_USER"
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            address: true,
+            role: true,
+            createdAt: true
         }
     });
-    return res.status(201).json({
-        message: "User registered successfully",
-        user: { id: user.id, name: user.name, email: user.email, role: user.role }
-    });
+    res.status(201).json(new apiResponse_1.ApiResponse(201, {
+        user,
+    }, "User registered successfully"));
 });
 exports.loginUser = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-    const result = models_1.userLoginSchema.safeParse(req.body);
+    const result = user_model_1.userLoginSchema.safeParse(req.body);
     if (!result.success) {
-        throw new apiError_1.ApiError(400, "All fields are required", result.error.issues);
+        return res.status(200).json({
+            error: result.error.format()
+        });
     }
     const { email, password } = result.data;
-    if (!email || !password) {
-        throw new apiError_1.ApiError(400, "All fields are required");
-    }
     const user = await prisma_1.default.user.findUnique({
         where: { email }
     });
-    if (!user || user.role !== "NORMAL_USER") {
-        return res.status(401).json({ message: "Invalid email or password" });
-    }
     if (!user) {
-        throw new apiError_1.ApiError(404, "User not found");
+        throw new apiError_1.ApiError(401, "Invalid email or password");
     }
-    const isPasswordCorrect = await bcrypt_1.default.compare(password, user.password);
-    if (!isPasswordCorrect) {
+    const isPasswordValid = await bcrypt_1.default.compare(password, user.password);
+    if (!isPasswordValid) {
         throw new apiError_1.ApiError(401, "Invalid email or password");
     }
     const accessToken = (0, jwt_1.generateAccessToken)(user.id);
     const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
-    if (!accessToken || !refreshToken) {
-        throw new apiError_1.ApiError(500, "Failed to generate tokens");
-    }
     await prisma_1.default.user.update({
-        where: {
-            id: user.id
-        },
-        data: {
-            refreshToken
-        }
-    });
-    res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000
+        where: { id: user.id },
+        data: { refreshToken }
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000
     });
-    return res.status(200).json({
-        message: "Login successful",
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
-        tokens: { accessToken, refreshToken }
+    const userResponse = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+        role: user.role,
+        createdAt: user.createdAt
+    };
+    res.status(200).json(new apiResponse_1.ApiResponse(200, {
+        user: userResponse,
+        accessToken,
+        refreshToken
+    }, "Login successful"));
+});
+exports.getUserProfile = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const user = req.user;
+    if (!user) {
+        throw new apiError_1.ApiError(401, "User not authenticated");
+    }
+    res.status(200).json(new apiResponse_1.ApiResponse(200, { user }, "Profile retrieved successfully"));
+});
+exports.updateUserProfile = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const user = req.user;
+    const { name, address } = req.body;
+    if (!user) {
+        throw new apiError_1.ApiError(401, "User not authenticated");
+    }
+    const updatedUser = await prisma_1.default.user.update({
+        where: { id: user.id },
+        data: {
+            ...(name && { name }),
+            ...(address && { address })
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            address: true,
+            role: true,
+            createdAt: true
+        }
     });
+    res.status(200).json(new apiResponse_1.ApiResponse(200, { user: updatedUser }, "Profile updated successfully"));
 });

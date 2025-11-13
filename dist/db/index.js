@@ -10,8 +10,8 @@ dotenv_1.default.config({
     path: './.env',
     debug: true,
 });
-const { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
-const sql = (0, serverless_1.neon)(`postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require&channel_binding=require`);
+const DB_URL = process.env.DATABASE_URL;
+const sql = (0, serverless_1.neon)(DB_URL);
 async function getPgVersion() {
     const result = await sql `SELECT version()`;
     console.log("postgres connected", result[0]);

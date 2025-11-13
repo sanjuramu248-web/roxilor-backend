@@ -2,7 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const shop_owner_controller_1 = require("../controllers/shop_owner.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
-router.post("/", shop_owner_controller_1.registerShopOwner);
-router.post("/login", shop_owner_controller_1.loginShopOwner);
+router.post("/register", shop_owner_controller_1.registerStoreOwner);
+router.post("/login", shop_owner_controller_1.loginStoreOwner);
+router.get("/profile", auth_middleware_1.authMiddleware, shop_owner_controller_1.getStoreOwnerProfile);
+router.put("/profile", auth_middleware_1.authMiddleware, shop_owner_controller_1.updateStoreOwnerProfile);
+router.post("/store", auth_middleware_1.authMiddleware, shop_owner_controller_1.createOwnStore);
+router.put("/store", auth_middleware_1.authMiddleware, shop_owner_controller_1.updateOwnStore);
 exports.default = router;

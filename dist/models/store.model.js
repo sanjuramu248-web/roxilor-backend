@@ -33,6 +33,6 @@ exports.storeFilterSchema = zod_1.z.object({
     email: zod_1.z.string().optional(),
     sortBy: zod_1.z.enum(['name', 'email', 'createdAt', 'rating']).optional(),
     sortOrder: zod_1.z.enum(['asc', 'desc']).optional(),
-    page: zod_1.z.number().min(1).optional(),
-    limit: zod_1.z.number().min(1).max(100).optional(),
+    page: zod_1.z.coerce.number().min(1).optional(),
+    limit: zod_1.z.coerce.number().min(1).max(100).optional(),
 });
