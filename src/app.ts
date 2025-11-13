@@ -4,23 +4,13 @@ import cors from "cors"
 
 const app = express();
 
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://roxiler-rate-my-store-project-full-nine.vercel.app/');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
 
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-    } else {
-        next();
-    }
-});
 
 app.use(cors({
-    origin: "https://roxiler-rate-my-store-project-full-nine.vercel.app/",
+    origin: ["https://roxiler-rate-my-store-project-full-nine.vercel.app/", "http://localhost:5173"],
     credentials: true
 }))
+
 
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ limit: '16kb', extended: true }));
