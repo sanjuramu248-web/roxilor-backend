@@ -4,13 +4,18 @@ import cors from "cors"
 
 const app = express();
 
-
-
-app.use(cors({
-    origin: ["https://roxiler-rate-my-store-project-full.vercel.app"],
-    credentials: true
-}))
-
+app.use(
+  cors({
+    origin: [
+      "https://roxiler-rate-my-store-project-full.vercel.app", // Production frontend
+      "http://localhost:5173", // Vite frontend (HTTP)
+      "http://localhost:3000", // Next.js/React local (HTTP)
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ limit: '16kb', extended: true }));
