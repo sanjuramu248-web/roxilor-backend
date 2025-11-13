@@ -7,7 +7,7 @@ const app = express();
 
 
 app.use(cors({
-    origin: ["https://roxiler-rate-my-store-project-full-nine.vercel.app/", "http://localhost:5173"],
+    origin: ["https://roxiler-rate-my-store-project-full.vercel.app", "http://localhost:5173"],
     credentials: true
 }))
 
